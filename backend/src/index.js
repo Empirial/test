@@ -2,7 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const crypto = require("crypto");
-const supabase = require("./supabaseClient");
+//const supabase = require("./supabaseClient");
 const sendEmail = require("./sendEmail");
 
 const app = express();
@@ -42,6 +42,13 @@ app.post("/api/paypal/webhook", async (req, res) => {
     const email = event.resource.custom_id || event.resource.invoice_id; // Email passed via metadata
 
     if (amount === 2.00 && currency === "USD" && email) {
+      const { createClient } = require('@supabase/supabase-js');
+
+    const SUPABASE_URL = "https://fkuegctjylijbjnzmawl.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrdWVnY3RqeWxpamJqbnptYXdsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0ODE5OTQzNiwiZXhwIjoyMDYzNzc1NDM2fQ.no2Ddi9kgH6gMZv6FMSuBD6su3IKyOPqaFmbbP-Z1o4";
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+      module.exports = supabase;
       const { data: licenseKeys, error } = await supabase
         .from("license_key")
         .select("*")
