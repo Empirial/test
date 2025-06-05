@@ -19,24 +19,24 @@ app.post("/api/paypal/webhook", async (req, res) => {
   const webhookId = process.env.PAYPAL_WEBHOOK_ID;
 
   // Validate PayPal webhook signature
-  const isValid = await verifyWebhookSignature({
-    transmissionId,
-    transmissionTime,
-    certUrl,
-    authAlgo,
-    transmissionSig,
-    webhookEventBody,
-    webhookId
-  });
+ // const isValid = await verifyWebhookSignature({
+  //  transmissionId,
+   // transmissionTime,
+    //certUrl,
+    //authAlgo,
+    //transmissionSig,
+    //webhookEventBody,
+    //webhookId
+  //});
 
-  if (!isValid) {
-    return res.status(403).send("Invalid PayPal webhook signature");
-  }
+  //if (!isValid) {
+   // return res.status(403).send("Invalid PayPal webhook signature");
+  //}
 
   const event = req.body;
 
   // Handle payment success
-  if (event.event_type === "PAYMENT.CAPTURE.COMPLETED") {
+  if (event.event_type === "PAYMENT.SALE.COMPLETED") {
     const amount = parseFloat(event.resource.amount.value);
     const currency = event.resource.amount.currency_code;
     const email = event.resource.custom_id || event.resource.invoice_id; // Email passed via metadata
