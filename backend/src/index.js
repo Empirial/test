@@ -42,6 +42,8 @@ app.post("/api/paypal/webhook", async (req, res) => {
     const email = event.resource.custom_id || event.resource.invoice_id; // Email passed via metadata
 
     if (amount === 2.00 && currency === "USD" && email) {
+      const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+      module.exports = supabase;
       const { data: licenseKeys, error } = await supabase
         .from("license_key")
         .select("*")
