@@ -1,51 +1,100 @@
-
 require("dotenv").config();
 const express = require("express");
-const crypto = require("crypto");
-const fetch = require("node-fetch");
 const cors = require("cors");
+const crypto = require("crypto");
 const supabase = require("./supabaseClient");
 const sendEmail = require("./sendEmail");
 
 const app = express();
 app.use(cors());
-app.use((req, res, next) => {
-  if (req.originalUrl === "/api/yoco/webhook") {
-    express.raw({ type: "application/json" })(req, res, next);
-  } else {
-    express.json()(req, res, next);
+app.use(express.json());
+
+app.post("/api/paypal/webhook", async (req, res) => {
+  const transmissionId = req.headers["paypal-transmission-id"];
+  const transmissionTime = req.headers["paypal-transmission-time"];
+  const certUrl = req.headers["paypal-cert-url"];
+  const authAlgo = req.headers["paypal-auth-algo"];
+  const transmissionSig = req.headers["paypal-transmission-sig"];
+  const webhookEventBody = JSON.stringify(req.body);
+  const webhookId = process.env.PAYPAL_WEBHOOK_ID;
+
+  // Validate PayPal webhook signature
+  const isValid = await verifyWebhookSignature({
+    transmissionId,
+    transmissionTime,
+    certUrl,
+    authAlgo,
+    transmissionSig,
+    webhookEventBody,
+    webhookId
+  });
+
+  if (!isValid) {
+    return res.status(403).send("Invalid PayPal webhook signature");
   }
-});
 
-app.post("/api/yoco/webhook", async (req, res) => {
-  const signature = req.headers["x-yoco-signature"];
-  const secret = process.env.YOCO_WEBHOOK_SECRET;
-  const expectedSignature = crypto.createHmac("sha256", secret).update(req.body).digest("hex");
+  const event = req.body;
 
-  if (signature !== expectedSignature) {
-    return res.status(403).send("Invalid signature");
-  }
+  // Handle payment success
+  if (event.event_type === "PAYMENT.CAPTURE.COMPLETED") {
+    const amount = parseFloat(event.resource.amount.value);
+    const currency = event.resource.amount.currency_code;
+    const email = event.resource.custom_id || event.resource.invoice_id; // Email passed via metadata
 
-  const event = JSON.parse(req.body);
+    if (amount === 2.00 && currency === "USD" && email) {
+      const { data: licenseKeys, error } = await supabase
+        .from("license_key")
+        .select("*")
+        .eq("used", false)
+        .limit(1);
 
-  if (event.type === "event.charge.successful" && event.data.amount === 200) {
-    const email = event.data.metadata?.email;
-    if (!email) return res.status(400).send("Missing email metadata");
+      if (error || !licenseKeys || licenseKeys.length === 0) {
+        return res.status(500).send("No available license keys");
+      }
 
-    const { data: licenseKeys, error } = await supabase.from("license_key").select("*").eq("used", false).limit(1);
-    if (error || !licenseKeys || licenseKeys.length === 0) {
-      return res.status(500).send("No available license keys");
+      const licenseKey = licenseKeys[0];
+      await sendEmail(email, licenseKey.key);
+      await supabase.from("license_key").update({ used: true }).eq("id", licenseKey.id);
+
+      return res.status(200).send("License key sent");
     }
-
-    const licenseKey = licenseKeys[0];
-    await sendEmail(email, licenseKey.key);
-    await supabase.from("license_key").update({ used: true }).eq("id", licenseKey.id);
-
-    return res.status(200).send("License key sent");
   }
 
   res.status(200).send("Webhook received");
 });
+
+// Signature validation using PayPal API
+async function verifyWebhookSignature({
+  transmissionId,
+  transmissionTime,
+  certUrl,
+  authAlgo,
+  transmissionSig,
+  webhookEventBody,
+  webhookId
+}) {
+  const fetch = require("node-fetch");
+
+  const response = await fetch("https://api-m.paypal.com/v1/notifications/verify-webhook-signature", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Basic ${Buffer.from(`${process.env.PAYPAL_CLIENT_ID}:${process.env.PAYPAL_CLIENT_SECRET}`).toString("base64")}`
+    },
+    body: JSON.stringify({
+      auth_algo: authAlgo,
+      cert_url: certUrl,
+      transmission_id: transmissionId,
+      transmission_sig: transmissionSig,
+      transmission_time: transmissionTime,
+      webhook_id: webhookId,
+      webhook_event: JSON.parse(webhookEventBody)
+    })
+  });
+
+  const result = await response.json();
+  return result.verification_status === "SUCCESS";
+}
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
