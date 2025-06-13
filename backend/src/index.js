@@ -41,7 +41,7 @@ app.post("/api/paypal/webhook", async (req, res) => {
     const currency = event.resource.amount.currency_code;
     const email = event.resource.custom_id || event.resource.invoice_id; // Email passed via metadata
 
-    if (amount === 2.00 && currency === "USD" && email) {
+    if (amount === 1.00 && currency === "USD" && email) {
       const { createClient } = require('@supabase/supabase-js');
 
       const SUPABASE_URL = "https://fkuegctjylijbjnzmawl.supabase.co";
