@@ -55,7 +55,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           
           <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center lg:justify-start">
             <a
-             href="https://www.paypal.com/sdk/js?client-id=AXdBqqitkGoRZj0Wg43ClYc16FZqA8fPd9WuEIvluYK_LOX1bNxAIuJrFjDt9eF_bE8W9FqJ31gZiwOk&currency=USD"
+             href="https://www.paypal.com/ncp/payment/TNP7YWJBJVVZQ"
              target="_blank"
              rel="noopener noreferrer"
              className="bg-gradient-to-r from-blue-600 to-blue-800 text-white px-6 md:px-8 py-3 md:py-4 rounded-full font-semibold text-sm md:text-base lg:text-lg hover:from-blue-700 hover:to-blue-900 transition-all transform hover:scale-105 shadow-lg border border-blue-500/30 text-center"

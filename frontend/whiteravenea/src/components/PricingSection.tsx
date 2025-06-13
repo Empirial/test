@@ -74,7 +74,14 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ className = "" }
             </div>
             
             <button className="w-full bg-gradient-to-r from-blue-600 to-blue-800 text-white py-3 md:py-4 rounded-full font-semibold text-sm sm:text-base md:text-lg hover:from-blue-700 hover:to-blue-900 transition-all transform hover:scale-105 shadow-lg">
-              GET LICENSE KEY NOW
+              <a
+             href="https://www.paypal.com/ncp/payment/TNP7YWJBJVVZQ"
+             target="_blank"
+             rel="noopener noreferrer"
+             className="bg-gradient-to-r from-blue-600 to-blue-800 text-white px-6 md:px-8 py-3 md:py-4 rounded-full font-semibold text-sm md:text-base lg:text-lg hover:from-blue-700 hover:to-blue-900 transition-all transform hover:scale-105 shadow-lg border border-blue-500/30 text-center"
+             >
+              GET LICENSE KEY
+            </a>
             </button>
           </div>
         </div>
